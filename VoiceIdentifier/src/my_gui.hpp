@@ -261,6 +261,7 @@ namespace my_gui
 		static float pitch_comb = -1;
 		static std::string file_path;
 		static uint32_t selection_start = 0, selection_length = 0;
+		static uint32_t fft_selection_start = 0, fft_selection_length = 0;
 		static SampleArray fft_vals;
 
 		static int windowFunctionRadio = 0;
@@ -414,10 +415,29 @@ namespace my_gui
 			conf.values.ys = plot_fft.data();
 			conf.grid_x.size = fft_frequencies.size();
 			conf.values.xs = fft_frequencies.data();
+			conf.selection.show = true;
+			conf.selection.start = &fft_selection_start;
+			conf.selection.length = &fft_selection_length;
 			conf.values.color = ImColor(0, 255, 100);
-
+			conf.selection.sanitize_fn = nullptr;
 			conf.line_thickness = 0.3f;
+
 			ImGui::Plot("fft", conf);
+
+			if (fft_selection_length > 0) {
+				ImGui::Begin("FFT closeup", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+				conf.values.ys_list = nullptr;
+				conf.selection.show = false;
+				// set new ones
+				conf.values.ys = plot_fft.data();
+				//conf.frame_size = ImVec2(600, 250);
+				conf.values.offset = fft_selection_start;
+				conf.values.count = fft_selection_length;
+				conf.line_thickness = 0.3f;
+				conf.frame_size = ImVec2(400, 250);
+				ImGui::Plot("FFT Selection", conf);
+				ImGui::End();
+			}
 
 			ImGui::End();
 		}
