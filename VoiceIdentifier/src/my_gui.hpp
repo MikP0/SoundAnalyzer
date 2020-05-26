@@ -72,6 +72,27 @@ namespace my_gui
 		return sum/((len/srate) * 2); // TODO: Change seconds to selection time
 	}
 
+	void generateSine(float amplitude, float frequency, float phase, float time, float sampleRate) {
+		AudioFile<float> af;
+		std::vector<std::vector<float>> buffer;
+		std::vector<float> mono;
+		int numSamples = time * sampleRate;
+		float delta_time = 1 / sampleRate;
+		float m_time = 0;
+
+		for (int i = 0; i < numSamples; i++) {
+			auto value = amplitude * std::sin(2 * std::atan(1) * 4 * frequency * m_time + phase);
+			mono.push_back(value);
+			m_time += delta_time;
+		}
+		
+		buffer.push_back(mono);
+
+		af.setAudioBuffer(buffer);
+		af.setSampleRate(44100);
+		af.save("Sinewave.wav");
+	}
+
 	float autocorrelation(int numSamples, float* samples, int sampling, float step, int start, float len) { // TODO: Match the selection
 
 		auto max_sample = *std::max_element(samples, samples + numSamples);
@@ -291,6 +312,7 @@ namespace my_gui
 			conf.scale.min = -1.1;
 			conf.scale.max = 1.1;
 			conf.grid_y.show = true;
+			conf.skip_small_lines = false;
 			conf.tooltip.show = true;
 			conf.tooltip.format = "x=%.2f, y=%.2f";
 			conf.grid_x.show = true;
@@ -344,7 +366,7 @@ namespace my_gui
 				//pitch_autocor = autocorrelation(audioFile.getNumSamplesPerChannel(), audioFile.samples[0].data(), audioFile.getSampleRate(), 0.05, selection_start, selection_length);
 			}
 
-			
+			generateSine(1, 440 , 0, 5, 44100);
 			//ImGui::PopStyleColor();
 
 			conf.values.ys_list = nullptr;
@@ -369,7 +391,7 @@ namespace my_gui
 
 			for (int i = 0; i < fft_vals.size()/2; i++) {
 				plot_fft.push_back(std::abs(fft_vals[i]));
-				fft_frequencies.push_back((audioFile.getSampleRate() / (fft_vals.size()/2)) * i);
+				fft_frequencies.push_back((audioFile.getSampleRate() / (fft_vals.size())) * i);
 			}
 
 			
@@ -386,9 +408,9 @@ namespace my_gui
 			if (show_comb) {
 
 				int best = 0, best_step = 0;
-				for (int step = 3; step < 200; ++step) {
+				for (int step = 2; step < 500; ++step) {
 					int sum = 0;
-					for (int i = 1; i < 20 && i * step < plot_fft.size(); ++i) {
+					for (int i = 0; i < 8 && i * step < plot_fft.size(); ++i) {
 						for (int di = 0; di < i; ++di) {
 							sum += plot_fft[i * step + di] / i;
 						}
@@ -407,7 +429,7 @@ namespace my_gui
 					}
 				}
 				show_comb = false;
-				pitch_comb = (best_step * audioFile.getSampleRate()) / plot_fft.size();
+				pitch_comb = (best_step * audioFile.getSampleRate()) / (plot_fft.size() * 2);
 			}
 
 			conf.scale.min = 0;		
@@ -430,6 +452,7 @@ namespace my_gui
 				conf.selection.show = false;
 				// set new ones
 				conf.values.ys = plot_fft.data();
+				conf.values.xs = fft_frequencies.data();
 				//conf.frame_size = ImVec2(600, 250);
 				conf.values.offset = fft_selection_start;
 				conf.values.count = fft_selection_length;

@@ -22,6 +22,7 @@
 
 #ifndef _AS_AudioFile_h
 #define _AS_AudioFile_h
+#define NOMINMAX
 
 #include <iostream>
 #include <vector>
@@ -31,6 +32,7 @@
 #include <unordered_map>
 #include <iterator>
 #include <algorithm>
+#include <limits>
 
 //=============================================================
 /** The different types of audio file, plus some other types to
@@ -1064,13 +1066,21 @@ T AudioFile<T>::singleByteToSample(uint8_t sample)
 }
 
 //=============================================================
-//template <class T>
-//T AudioFile<T>::clamp(T value, T minValue, T maxValue)
-//{
-//    value = std::min(value, maxValue);
-//    value = std::max(value, minValue);
-//    return value;
-//}
+
+#ifndef maxt
+#define maxt(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef mint
+#define mint(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+template <class T>
+T AudioFile<T>::clamp(T value, T minValue, T maxValue)
+{
+    value = mint(value, maxValue);
+    value = maxt(value, minValue);
+    return value;
+}
 
 //=============================================================
 template <class T>
